@@ -29,8 +29,8 @@ export default {
                 },
             });
         },
-        catsByOwner: async (_parent: undefined, args: Cat) => {
-            return await catModel.find({owner: args.owner});
+        catsByOwner: async (_parent: undefined, args: {ownerId: string}) => {
+            return await catModel.find({owner: args.ownerId});
         },
     },
 
@@ -41,29 +41,34 @@ export default {
             context: MyContext,
         ) => {
             isLoggedIn(context);
+            args.input.owner = context.userdata?.user.id;
             return await catModel.create(args.input);
         },
         updateCat: async (
             _parent: undefined,
-            args: {id: String; input: Partial<Omit<Cat, 'id'>>},
+            args: {id: string; input: Partial<Omit<Cat, 'id'>>},
             context: MyContext,
         ) => {
             isLoggedIn(context);
-            if (context.userdata?.user.role === 'admin') {
-                return await catModel.findByIdAndUpdate(args.id, args.input, {
-                    new: true,
-                });
+            if (context.userdata?.user.role !== 'admin') {
+                const filter = {_id: args.id, owner: context.userdata?.user.id};
+                return await catModel.findOneAndUpdate(filter, args.input, {new: true});
+            } else {
+                return await catModel.findByIdAndUpdate(args.id, args.input, {new: true});
             }
-            const cat = await catModel.findById(args.id);
-            console.log('CAT', cat?.owner.toString());
-            console.log('USER', context.userdata?.user.id);
-            if (context.userdata?.user.id !== cat?.owner.toString()) {
-                console.log('NOT AUTHORIZED');
-                throw new Error('Not authorized');
+        },
+        deleteCat: async (
+            _parent: undefined,
+            args: {id: string},
+            context: MyContext,
+        ) => {
+            isLoggedIn(context);
+            if (context.userdata?.user.role !== 'admin') {
+                const filter = {_id: args.id, owner: context.userdata?.user.id};
+                return await catModel.findOneAndDelete(filter);
+            } else {
+                return await catModel.findByIdAndDelete(args.id);
             }
-            return await catModel.findByIdAndUpdate(args.id, args.input, {
-                new: true,
-            });
-        }
+        },
     }
 }
