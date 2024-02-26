@@ -18,7 +18,7 @@
   "dependencies": {
     "@apollo/server": "^4.10.0",
     "@graphql-tools/load-files": "^7.0.0",
-    "@graphql-tools/merge": "^9.0.1",
+    "@graphql-tools/merge": "^9.0.3",
     "@graphql-tools/schema": "^10.0.2",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
@@ -41,6 +41,7 @@
     "@types/express": "^4.17.21",
     "@types/geojson": "^7946.0.14",
     "@types/jest": "^29.5.12",
+    "@types/jquery": "^3.5.29",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.11.17",

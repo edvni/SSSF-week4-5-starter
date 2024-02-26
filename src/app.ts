@@ -18,7 +18,7 @@ import authenticate from './functions/authenticate';
 import {makeExecutableSchema} from '@graphql-tools/schema';
 import {applyMiddleware} from 'graphql-middleware';
 import {MyContext} from './types/MyContext';
-import {GraphQLError} from 'graphql';
+import {MessageResponse} from './types/MessageTypes';
 
 const app = express();
 
@@ -31,8 +31,13 @@ app.use(
 
 (async () => {
   try {
+    app.get(
+      '/',
+      (_req: express.Request, res: express.Response<MessageResponse>) => {
+        res.send({message: 'Server running'});
+      },
+    );
     // TODO Create a rate limit rule instance (not WSK2 course)
-
     // TODO Create a permissions object (not WSK2 course)
 
     const schema = applyMiddleware(
@@ -69,7 +74,7 @@ app.use(
     app.use(notFound);
     app.use(errorHandler);
   } catch (error) {
-    console.log(error);
+    console.error((error as Error).message);
   }
 })();
 
