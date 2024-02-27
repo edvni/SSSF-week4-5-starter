@@ -1,8 +1,8 @@
 import {Cat, User, UserInput} from '../../types/DBTypes';
 import fetchData from '../../functions/fetchData';
-import {UserResponse} from '../../types/MessageTypes';
+import {LoginResponse, UserResponse} from '../../types/MessageTypes';
 import {MyContext} from '../../types/MyContext';
-import {isAdmin} from '../../functions/authorize';
+import {isAdmin, isLoggedIn} from '../../functions/authorize';
 
 // TODO: create resolvers based on user.graphql
 // note: when updating or deleting a user don't send id to the auth server, it will get it from the token. So token needs to be sent with the request to the auth server
@@ -22,7 +22,11 @@ export default {
     userById: async (_parent: undefined, args: {id: string}) => {
       return await fetchData<User>(`${process.env.AUTH_URL}/users/${args.id}`);
     },
-    checkToken: async (_parent: undefined, context: MyContext) => {
+    checkToken: async (
+      _parent: undefined,
+      _args: undefined,
+      context: MyContext,
+    ) => {
       return {user: context.userdata?.user};
     },
   },
@@ -31,7 +35,7 @@ export default {
       _parent: undefined,
       args: {credentials: {username: string; password: string}},
     ) => {
-      return await fetchData<UserResponse>(
+      return await fetchData<LoginResponse>(
         `${process.env.AUTH_URL}/auth/login`,
         {
           method: 'POST',
@@ -42,13 +46,13 @@ export default {
         },
       );
     },
-    register: async (_parent: undefined, args: {input: UserInput}) => {
+    register: async (_parent: undefined, args: {user: UserInput}) => {
       return await fetchData<UserResponse>(`${process.env.AUTH_URL}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(args.input),
+        body: JSON.stringify(args.user),
       });
     },
     updateUser: async (
@@ -56,23 +60,22 @@ export default {
       args: {user: Partial<UserInput>},
       context: MyContext,
     ) => {
-      return await fetchData<UserResponse>(
-        `${process.env.AUTH_URL}/users/${context.userdata?.user.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${context.userdata?.token}`,
-          },
-          body: JSON.stringify(args.user),
+      isLoggedIn(context);
+      return await fetchData<UserResponse>(`${process.env.AUTH_URL}/users`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${context.userdata?.token}`,
         },
-      );
+        body: JSON.stringify(args.user),
+      });
     },
     deleteUser: async (
       _parent: undefined,
       args: {id: string},
       context: MyContext,
     ) => {
+      isLoggedIn(context);
       return await fetchData<UserResponse>(
         `${process.env.AUTH_URL}/users/${args.id}`,
         {
@@ -90,17 +93,14 @@ export default {
       context: MyContext,
     ) => {
       isAdmin(context);
-      return await fetchData<UserResponse>(
-        `${process.env.AUTH_URL}/users/${context.userdata?.user}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${context.userdata?.token}`,
-          },
-          body: JSON.stringify(args.user),
+      return await fetchData<UserResponse>(`${process.env.AUTH_URL}/users`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${context.userdata?.token}`,
         },
-      );
+        body: JSON.stringify(args.user),
+      });
     },
     deleteUserAsAdmin: async (
       _parent: undefined,
